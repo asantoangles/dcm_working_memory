@@ -1,4 +1,4 @@
-Code of Santo-Angles et al. (2022). Performance-dependent reconfiguration of large-scale networks supporting working memory: a dynamic causal modelling study of MEG data![image](https://user-images.githubusercontent.com/32225844/205829493-6da82f8d-824b-4f66-ab33-43d7af6415e5.png)
+Code of Santo-Angles et al. (2022). Performance-dependent reconfiguration of large-scale networks supporting working memory: a dynamic causal modelling study of MEG data
 
 - Matlab script script_00_run_all_scripts.m invert DCMs, perform PEB, leave-one-out cross-validation and sensitivity analysis.
 
