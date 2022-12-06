@@ -4,4 +4,4 @@ Code of Santo-Angles et al. (2022). Performance-dependent reconfiguration of lar
 
 - R scripts (Rmd) create html documents with manuscript figures and summary of results.
 
-Source timecourses used as input, and all the intermediary outputs of this pipeline, are available in XXX
+Data used as input in this pipeline (source timecourses, and all intermediary outputs), are available in XXX
