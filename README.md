@@ -4,5 +4,5 @@ Code of Santo-Angles et al. (2023). Performance-dependent reconfiguration of eff
 
 - R scripts (Rmd) create html documents with manuscript figures and summary of results.
 
-Data used as input in this pipeline (source timecourses, and all intermediary outputs), are available in [
+Data used as input in this pipeline (source timecourses, and all intermediary outputs), are available in [here
 ](https://osf.io/hbgu2/?view_only=8bc743e2068d47f0889f7b556beb2068 .)
