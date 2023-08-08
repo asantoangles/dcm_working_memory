@@ -1,0 +1,3569 @@
+---
+title: "DCM summary results"
+author: "Aniol Santo Angles"
+date: "November 2022"
+output:
+  html_document:
+    highlight: tango
+    number_sections: yes
+    theme: united
+    toc: yes
+    toc_depth: 5
+    toc_float: yes
+
+---
+  
+```{r, echo=FALSE, message=FALSE}
+library(kableExtra)
+library(rmatio)
+library(ggcorrplot)
+
+```
+
+```{r, echo=FALSE, message=FALSE}
+
+threshold_peb = 0.85
+
+```
+
+Manuscript figures with PEB results were created with  the present summary of results. Here, PEB results are presented in matrix form (rows as target region, columns as source region). Colored squares in matrix signal those connections with posterior probability Pp > 0.85. Red (blue) square means condition 1 higher (lower) than condition 2 (e.g., delay vs baseline, or correct vs swap). Quantitative information about PEB is presented in table with the following columns: Parameter (in column form described above), Ep (PEB parameter),	Pp (posterior probability). Brain regions: SFG, superior frontal gyrus; cMFG, contralateral middle frontal gyrus; iMFG ipsilateral middle frontal gyrus; cLIP, contralateral lateral intraparietal; iLIP, ipsilateral lateral intraparietal; cEVC, contralateral early visual cortex; iEVC ipsilateral early visual cortex. Contralateral (ipsilateral) relative to stimulus presentation. 
+
+
+# within-trialtype PEB
+
+## early delay vs baseline
+
+```{r echo=FALSE, message=FALSE}
+
+first_time = 'early_delay'
+second_time = 'baseline'
+times = c(first_time, second_time)
+
+```
+
+### highaccuracy
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype = 'highaccuracy'
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype,'_', first_time, '_vs_', second_time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+
+### lowaccuracy
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype = 'lowaccuracy'
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype,'_', first_time, '_vs_', second_time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+### swap
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype = 'swap'
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype,'_', first_time, '_vs_', second_time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+
+
+## late delay vs baseline
+
+```{r echo=FALSE, message=FALSE}
+
+first_time = 'late_delay'
+second_time = 'baseline'
+times = c(first_time, second_time)
+
+```
+
+### highaccuracy
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype = 'highaccuracy'
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype,'_', first_time, '_vs_', second_time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+
+### lowaccuracy
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype = 'lowaccuracy'
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype,'_', first_time, '_vs_', second_time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+### swap
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype = 'swap'
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype,'_', first_time, '_vs_', second_time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+
+
+# between-trialtype PEB
+
+## baseline
+
+```{r echo=FALSE, message=FALSE}
+
+time = 'baseline'
+
+```
+
+### highaccuracy vs lowaccuracy
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype_1 = 'highaccuracy'
+trialtype_2 = 'lowaccuracy'
+
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype_1, '_', trialtype_2, '_', time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+### highaccuracy vs swap
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype_1 = 'highaccuracy'
+trialtype_2 = 'swap'
+
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype_1, '_', trialtype_2, '_', time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+
+
+### lowaccuracy vs swap
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype_1 = 'lowaccuracy'
+trialtype_2 = 'swap'
+
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype_1, '_', trialtype_2, '_', time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+
+
+
+## early_delay
+
+```{r echo=FALSE, message=FALSE}
+
+time = 'early_delay'
+
+```
+
+### highaccuracy vs lowaccuracy
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype_1 = 'highaccuracy'
+trialtype_2 = 'lowaccuracy'
+
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype_1, '_', trialtype_2, '_', time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+### highaccuracy vs swap
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype_1 = 'highaccuracy'
+trialtype_2 = 'swap'
+
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype_1, '_', trialtype_2, '_', time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+
+
+### lowaccuracy vs swap
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype_1 = 'lowaccuracy'
+trialtype_2 = 'swap'
+
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype_1, '_', trialtype_2, '_', time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+
+
+## late_delay
+
+```{r echo=FALSE, message=FALSE}
+
+time = 'late_delay'
+
+```
+
+### highaccuracy vs lowaccuracy
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype_1 = 'highaccuracy'
+trialtype_2 = 'lowaccuracy'
+
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype_1, '_', trialtype_2, '_', time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+### highaccuracy vs swap
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype_1 = 'highaccuracy'
+trialtype_2 = 'swap'
+
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype_1, '_', trialtype_2, '_', time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+
+
+### lowaccuracy vs swap
+
+```{r echo=FALSE, message=FALSE}
+
+trialtype_1 = 'lowaccuracy'
+trialtype_2 = 'swap'
+
+
+# load peb
+peb = read.mat(paste('/Users/as14864/Data/Analysis/BESM/DCM/dcm_github_hbm/PEB/PEB_', trialtype_1, '_', trialtype_2, '_', time, '.mat', sep = ""))$PEB
+
+# reset
+peb$Ce = peb$Ce[[1]]
+peb$Ep = peb$Ep[[1]]
+peb$Pp = peb$Pp[[1]]
+
+```
+
+#### feedforward
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 1
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[2,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[3,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[2,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[1,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[3,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[1,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[2,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[4,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[1,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[3,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[5,7] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+#### feedback
+
+```{r echo=FALSE, message=FALSE}
+
+number_parameters = 113
+firt_param = number_parameters + 19
+number_parameters_matrix = 18 # matrices: A1, A2, AN1, AN2 (AMPA feedforward,...)
+last_param = firt_param+number_parameters_matrix
+index_param = firt_param:(last_param-1)
+  
+# output
+param_table = as.data.frame(matrix(nrow = 0, ncol = 3))
+colnames(param_table) = c("Parameter", "Ep", "Pp")
+
+data_plot = as.data.frame(matrix(0, nrow = 7, ncol = 7))
+
+# for each parameter
+for (param_i in index_param) {
+  
+  # if Pp > threshold_peb
+  if (peb$Pp[param_i] >= threshold_peb) {
+    
+    if (param_i == index_param[1]) {
+      data_plot[4,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[2]) {
+      data_plot[5,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[3]) {
+      data_plot[6,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[4]) {
+      data_plot[7,1] = peb$Ep[param_i]
+    } else if (param_i == index_param[5]) {
+      data_plot[1,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[6]) {
+      data_plot[3,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[7]) {
+      data_plot[4,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[8]) {
+      data_plot[6,2] = peb$Ep[param_i]
+    } else if (param_i == index_param[9]) {
+      data_plot[1,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[10]) {
+      data_plot[2,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[11]) {
+      data_plot[5,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[12]) {
+      data_plot[7,3] = peb$Ep[param_i]
+    } else if (param_i == index_param[13]) {
+      data_plot[5,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[14]) {
+      data_plot[6,4] = peb$Ep[param_i]
+    } else if (param_i == index_param[15]) {
+      data_plot[4,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[16]) {
+      data_plot[7,5] = peb$Ep[param_i]
+    } else if (param_i == index_param[17]) {
+      data_plot[7,6] = peb$Ep[param_i]
+    } else if (param_i == index_param[18]) {
+      data_plot[6,7] = peb$Ep[param_i]
+    }
+
+    # display parameter, Ep and Pp
+    param_ii = param_i-length(peb$Pnames)
+    param_name = peb$Pnames[[param_ii]]
+
+    param = as.data.frame(matrix(NA, nrow = 1, ncol = 5))
+    colnames(param) = c("Parameter", "Ep", "Pp")
+    
+    param[1,1] = param_name
+    param[1,2] = round(peb$Ep[param_i], 3)
+    param[1,3] = round(peb$Pp[param_i], 3)
+    
+    # merge tables
+    param_table = rbind(param_table, param)
+    
+  }
+    
+}
+
+colnames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+rownames(data_plot) = c("SFG","cMFG", "iMFG", "cLIP","iLIP", "cEVC","iEVC")
+kbl(round(data_plot, 2)) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# transform into [-1, 1] matrix
+for (row_i in 1:nrow(data_plot)) {
+  for (col_i in 1:ncol(data_plot)) {
+    if (data_plot[row_i, col_i] > 0) {
+      data_plot[row_i, col_i] = 1 }
+    else if (data_plot[row_i, col_i] < 0) { 
+      data_plot[row_i, col_i] = -1 
+    }
+  }
+}
+
+# plot
+data_plot = t(data_plot)
+ggcorrplot(as.matrix(data_plot[,ncol(data_plot):1]))
+
+# table
+# https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+kbl(param_table) %>%
+kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+```
+
+
+
+
+
+
+
+
